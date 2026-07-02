@@ -1,0 +1,208 @@
+{% extends 'predictor/base.html' %}
+{% block title %}Predict — HouseAI{% endblock %}
+
+{% block content %}
+<section class="page-hero py-5">
+  <div class="container">
+    <div class="page-hero-inner text-center">
+      <div class="page-icon mb-3"><i class="bi bi-cpu-fill"></i></div>
+      <h1 class="page-title">House Price Prediction</h1>
+      <p class="page-subtitle">Fill in the property details below for an instant ML-powered estimate</p>
+    </div>
+  </div>
+</section>
+
+<section class="py-5">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-lg-8">
+
+        <!-- Form Card -->
+        <div class="predict-card">
+          <div class="predict-card-header">
+            <i class="bi bi-sliders me-2"></i>Property Details
+            <span class="ms-auto badge bg-primary">8 Features</span>
+          </div>
+
+          {% if form.errors %}
+          <div class="alert alert-danger mx-4 mt-4">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            Please correct the errors below.
+          </div>
+          {% endif %}
+
+          <form method="POST" class="predict-form p-4">
+            {% csrf_token %}
+
+            <!-- Row 1: Income & Age -->
+            <div class="form-section-label">
+              <i class="bi bi-cash-coin me-2"></i>Economic & Property Info
+            </div>
+            <div class="row g-3 mb-4">
+              <div class="col-md-6">
+                <label class="form-label fw-500">
+                  {{ form.median_income.label }}
+                  <i class="bi bi-info-circle ms-1 text-muted" title="{{ form.median_income.help_text }}"
+                     data-bs-toggle="tooltip"></i>
+                </label>
+                {{ form.median_income }}
+                {% if form.median_income.errors %}
+                <div class="invalid-feedback d-block">{{ form.median_income.errors.0 }}</div>
+                {% endif %}
+                <div class="form-text">{{ form.median_income.help_text }}</div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-500">{{ form.house_age.label }}</label>
+                {{ form.house_age }}
+                {% if form.house_age.errors %}
+                <div class="invalid-feedback d-block">{{ form.house_age.errors.0 }}</div>
+                {% endif %}
+                <div class="form-text">{{ form.house_age.help_text }}</div>
+              </div>
+            </div>
+
+            <!-- Row 2: Rooms & Bedrooms -->
+            <div class="form-section-label">
+              <i class="bi bi-door-open me-2"></i>Room Configuration
+            </div>
+            <div class="row g-3 mb-4">
+              <div class="col-md-6">
+                <label class="form-label fw-500">{{ form.avg_rooms.label }}</label>
+                {{ form.avg_rooms }}
+                {% if form.avg_rooms.errors %}
+                <div class="invalid-feedback d-block">{{ form.avg_rooms.errors.0 }}</div>
+                {% endif %}
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-500">{{ form.avg_bedrooms.label }}</label>
+                {{ form.avg_bedrooms }}
+                {% if form.avg_bedrooms.errors %}
+                <div class="invalid-feedback d-block">{{ form.avg_bedrooms.errors.0 }}</div>
+                {% endif %}
+              </div>
+            </div>
+
+            <!-- Row 3: Population & Occupancy -->
+            <div class="form-section-label">
+              <i class="bi bi-people me-2"></i>Demographics
+            </div>
+            <div class="row g-3 mb-4">
+              <div class="col-md-6">
+                <label class="form-label fw-500">{{ form.population.label }}</label>
+                {{ form.population }}
+                {% if form.population.errors %}
+                <div class="invalid-feedback d-block">{{ form.population.errors.0 }}</div>
+                {% endif %}
+                <div class="form-text">{{ form.population.help_text }}</div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-500">{{ form.avg_occupancy.label }}</label>
+                {{ form.avg_occupancy }}
+                {% if form.avg_occupancy.errors %}
+                <div class="invalid-feedback d-block">{{ form.avg_occupancy.errors.0 }}</div>
+                {% endif %}
+              </div>
+            </div>
+
+            <!-- Row 4: Location -->
+            <div class="form-section-label">
+              <i class="bi bi-geo-alt me-2"></i>Location (California)
+            </div>
+            <div class="row g-3 mb-4">
+              <div class="col-md-6">
+                <label class="form-label fw-500">{{ form.latitude.label }}</label>
+                {{ form.latitude }}
+                {% if form.latitude.errors %}
+                <div class="invalid-feedback d-block">{{ form.latitude.errors.0 }}</div>
+                {% endif %}
+                <div class="form-text">{{ form.latitude.help_text }}</div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-500">{{ form.longitude.label }}</label>
+                {{ form.longitude }}
+                {% if form.longitude.errors %}
+                <div class="invalid-feedback d-block">{{ form.longitude.errors.0 }}</div>
+                {% endif %}
+                <div class="form-text">{{ form.longitude.help_text }}</div>
+              </div>
+            </div>
+
+            {% if form.non_field_errors %}
+            <div class="alert alert-danger">{{ form.non_field_errors.0 }}</div>
+            {% endif %}
+
+            <div class="d-flex gap-3 mt-4">
+              <button type="submit" class="btn btn-predict btn-lg flex-grow-1">
+                <i class="bi bi-lightning-fill me-2"></i>Predict House Price
+              </button>
+              <button type="reset" class="btn btn-outline-secondary btn-lg">
+                <i class="bi bi-arrow-counterclockwise"></i>
+              </button>
+            </div>
+          </form>
+        </div>
+
+      </div>
+
+      <!-- Sidebar Tips -->
+      <div class="col-lg-4 mt-4 mt-lg-0">
+        <div class="sidebar-card">
+          <h6 class="sidebar-title">
+            <i class="bi bi-lightbulb-fill me-2 text-warning"></i>Input Tips
+          </h6>
+          <ul class="sidebar-tips">
+            <li><strong>Median Income</strong> is in $10k units. e.g. 3.5 = $35,000</li>
+            <li><strong>House Age</strong> is median for the block group</li>
+            <li><strong>Avg Rooms</strong> includes all rooms, not just bedrooms</li>
+            <li><strong>Population</strong> is total for the block, not just residents</li>
+            <li><strong>Latitude</strong> ranges 32.5°–42.0° for California</li>
+            <li><strong>Longitude</strong> ranges -124.5° to -114.5° for California</li>
+          </ul>
+        </div>
+
+        <div class="sidebar-card mt-3">
+          <h6 class="sidebar-title">
+            <i class="bi bi-cpu-fill me-2 text-primary"></i>Active Model
+          </h6>
+          <div class="active-model-info">
+            <div class="am-name">Linear Regression</div>
+            <div class="am-detail">Best R² from 3-model comparison</div>
+            <div class="am-detail">11 engineered features used</div>
+          </div>
+        </div>
+
+        <div class="sidebar-card mt-3">
+          <h6 class="sidebar-title">
+            <i class="bi bi-map me-2 text-info"></i>Sample Locations
+          </h6>
+          <div class="sample-locations">
+            <button class="sample-btn" onclick="fillSample(37.88, -122.23)">
+              <i class="bi bi-geo-alt me-1"></i>San Francisco Area
+            </button>
+            <button class="sample-btn" onclick="fillSample(34.05, -118.24)">
+              <i class="bi bi-geo-alt me-1"></i>Los Angeles Area
+            </button>
+            <button class="sample-btn" onclick="fillSample(32.72, -117.15)">
+              <i class="bi bi-geo-alt me-1"></i>San Diego Area
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Tooltips
+  document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(
+    el => new bootstrap.Tooltip(el));
+
+  function fillSample(lat, lng) {
+    document.getElementById('id_latitude').value  = lat;
+    document.getElementById('id_longitude').value = lng;
+  }
+</script>
+{% endblock %}

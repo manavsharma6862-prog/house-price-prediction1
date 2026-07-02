@@ -1,0 +1,199 @@
+{% extends 'predictor/base.html' %}
+{% load custom_filters %}
+{% block title %}HouseAI — Smart Price Prediction{% endblock %}
+
+{% block content %}
+
+<!-- HERO -->
+<section class="hero-section">
+  <div class="hero-bg-grid"></div>
+  <div class="container position-relative">
+    <div class="row align-items-center min-vh-80 py-5">
+      <div class="col-lg-6 mb-5 mb-lg-0">
+        <div class="hero-eyebrow mb-3">
+          <span class="badge-pill"><i class="bi bi-cpu-fill me-1"></i>ML-Powered Predictions</span>
+        </div>
+        <h1 class="hero-title mb-4">
+          Predict House Prices<br/><span class="gradient-text">with Machine Learning</span>
+        </h1>
+        <p class="hero-subtitle mb-5">
+          Enterprise-grade price prediction powered by Gradient Boosting, Random Forest,
+          and Linear Regression — trained on the California Housing Dataset.
+        </p>
+        <div class="d-flex flex-wrap gap-3">
+          <a href="{% url 'predict' %}" class="btn btn-hero-primary">
+            <i class="bi bi-lightning-fill me-2"></i>Predict Now
+          </a>
+          <a href="{% url 'dashboard' %}" class="btn btn-hero-outline">
+            <i class="bi bi-bar-chart-line me-2"></i>View Dashboard
+          </a>
+        </div>
+        <div class="hero-stats mt-5">
+          <div class="hero-stat">
+            <div class="hero-stat-number">{{ best_r2|floatformat:4 }}</div>
+            <div class="hero-stat-label">Best R² Score</div>
+          </div>
+          <div class="hero-stat-divider"></div>
+          <div class="hero-stat">
+            <div class="hero-stat-number">3</div>
+            <div class="hero-stat-label">Models Compared</div>
+          </div>
+          <div class="hero-stat-divider"></div>
+          <div class="hero-stat">
+            <div class="hero-stat-number">{{ total_predictions }}</div>
+            <div class="hero-stat-label">Predictions Made</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-6">
+        <div class="hero-card-stack">
+          <div class="hero-card hero-card-back"></div>
+          <div class="hero-card hero-card-mid"></div>
+          <div class="hero-card hero-card-front">
+            <div class="hc-header"><i class="bi bi-house-fill me-2"></i>Live Prediction Preview</div>
+            <div class="hc-price">$387,500</div>
+            <div class="hc-label">Estimated Market Value</div>
+            <div class="hc-badge mt-2"><i class="bi bi-check-circle-fill me-1"></i>High Confidence</div>
+            <div class="hc-features mt-3">
+              <div class="hc-feat"><span>Income</span><span>$52,000</span></div>
+              <div class="hc-feat"><span>Rooms</span><span>5.2</span></div>
+              <div class="hc-feat"><span>Age</span><span>18 yrs</span></div>
+              <div class="hc-feat"><span>Location</span><span>37.88°N</span></div>
+            </div>
+            <div class="hc-model mt-3">
+              <small class="text-muted"><i class="bi bi-cpu me-1"></i>{{ best_model }}</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="section-dark py-5">
+  <div class="container">
+    <div class="section-header text-center mb-5">
+      <h2 class="section-title">How It Works</h2>
+      <p class="section-subtitle">End-to-end machine learning pipeline</p>
+    </div>
+    <div class="row g-4">
+      <div class="col-md-6 col-lg-3">
+        <div class="how-card">
+          <div class="how-number">1</div>
+          <div class="how-icon"><i class="bi bi-database-fill"></i></div>
+          <h5 class="how-title">Data Ingestion</h5>
+          <p class="how-desc">Load California Housing dataset with 20,640 records</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-3">
+        <div class="how-card">
+          <div class="how-number">2</div>
+          <div class="how-icon"><i class="bi bi-gear-fill"></i></div>
+          <h5 class="how-title">Feature Engineering</h5>
+          <p class="how-desc">Create 11 engineered features from 8 raw inputs</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-3">
+        <div class="how-card">
+          <div class="how-number">3</div>
+          <div class="how-icon"><i class="bi bi-cpu-fill"></i></div>
+          <h5 class="how-title">Model Training</h5>
+          <p class="how-desc">Train and compare 3 ML algorithms with cross-validation</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-3">
+        <div class="how-card">
+          <div class="how-number">4</div>
+          <div class="how-icon"><i class="bi bi-lightning-fill"></i></div>
+          <h5 class="how-title">Prediction</h5>
+          <p class="how-desc">Instant price estimates via Django web interface</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MODEL COMPARISON -->
+<section class="py-5">
+  <div class="container">
+    <div class="section-header text-center mb-5">
+      <h2 class="section-title">Model Comparison</h2>
+      <p class="section-subtitle">Trained and evaluated 3 algorithms — best model auto-selected</p>
+    </div>
+    <div class="row g-4 justify-content-center">
+      {% for m in model_results %}
+      <div class="col-md-4">
+        <div class="model-card {% if m.best %}model-card-best{% endif %}">
+          {% if m.best %}<div class="model-best-badge"><i class="bi bi-trophy-fill me-1"></i>Best Model</div>{% endif %}
+          <h5 class="model-name">{{ m.name }}</h5>
+          <div class="model-metrics">
+            <div class="metric-row">
+              <span class="metric-label">R² Score</span>
+              <span class="metric-value text-success">{{ m.r2 }}</span>
+            </div>
+            <div class="metric-row">
+              <span class="metric-label">RMSE</span>
+              <span class="metric-value text-warning">{{ m.rmse }}</span>
+            </div>
+            <div class="metric-row">
+              <span class="metric-label">MAE</span>
+              <span class="metric-value text-info">{{ m.mae }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- VISUALIZATIONS -->
+<section class="section-dark py-5">
+  <div class="container">
+    <div class="section-header text-center mb-5">
+      <h2 class="section-title">EDA Visualizations</h2>
+      <p class="section-subtitle">Professional charts generated during model training</p>
+    </div>
+    <div class="row g-4">
+      <div class="col-md-6">
+        <div class="viz-card">
+          <div class="viz-title">Correlation Heatmap</div>
+          <img src="/media/visualizations/correlation_heatmap.png" alt="Correlation Heatmap" class="viz-img" loading="lazy"/>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="viz-card">
+          <div class="viz-title">Price Distribution</div>
+          <img src="/media/visualizations/price_distribution.png" alt="Price Distribution" class="viz-img" loading="lazy"/>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="viz-card">
+          <div class="viz-title">Feature Importance</div>
+          <img src="/media/visualizations/feature_importance.png" alt="Feature Importance" class="viz-img" loading="lazy"/>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="viz-card">
+          <div class="viz-title">Scatter Plots</div>
+          <img src="/media/visualizations/scatter_plots.png" alt="Scatter Plots" class="viz-img" loading="lazy"/>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section py-5">
+  <div class="container text-center">
+    <h2 class="cta-title mb-3">Ready to Predict?</h2>
+    <p class="cta-subtitle mb-4">Enter your property details and get an instant price estimate</p>
+    <a href="{% url 'predict' %}" class="btn btn-hero-primary btn-lg">
+      <i class="bi bi-lightning-fill me-2"></i>Start Predicting
+    </a>
+  </div>
+</section>
+
+{% endblock %}

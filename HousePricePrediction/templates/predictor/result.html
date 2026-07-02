@@ -1,0 +1,157 @@
+{% extends 'predictor/base.html' %}
+{% block title %}Prediction Result — HouseAI{% endblock %}
+
+{% block content %}
+<section class="page-hero py-5">
+  <div class="container">
+    <div class="page-hero-inner text-center">
+      <div class="page-icon mb-3 text-success"><i class="bi bi-check-circle-fill"></i></div>
+      <h1 class="page-title">Prediction Result</h1>
+      <p class="page-subtitle">
+        Prediction #{{ record.pk }} &bull;
+        {{ record.created_at|date:"F j, Y — H:i" }} UTC
+      </p>
+    </div>
+  </div>
+</section>
+
+<section class="py-5">
+  <div class="container">
+    <div class="row justify-content-center">
+
+      <!-- Main Result -->
+      <div class="col-lg-7">
+        <div class="result-main-card">
+          <div class="result-label">Estimated House Price</div>
+          <div class="result-price">${{ record.predicted_price_usd|floatformat:0 }}</div>
+          <div class="result-unit">({{ record.predicted_price|floatformat:4 }} × $100,000)</div>
+
+          <div class="result-confidence mt-3">
+            <span class="badge bg-{{ badge_class }} fs-6 px-4 py-2">
+              {% if badge_class == 'success' %}
+              <i class="bi bi-shield-fill-check me-1"></i>
+              {% elif badge_class == 'warning' %}
+              <i class="bi bi-shield-fill-exclamation me-1"></i>
+              {% else %}
+              <i class="bi bi-shield-fill-x me-1"></i>
+              {% endif %}
+              {{ record.confidence_level }}
+            </span>
+          </div>
+
+          <div class="result-model-info mt-3">
+            <i class="bi bi-cpu me-1 text-muted"></i>
+            <small class="text-muted">Predicted by <strong>{{ record.model_used }}</strong></small>
+          </div>
+        </div>
+
+        <!-- Price Context -->
+        <div class="price-context-card mt-4">
+          <h6 class="fw-600 mb-3">
+            <i class="bi bi-bar-chart-fill me-2 text-primary"></i>Price Context
+          </h6>
+          <div class="row g-3">
+            {% if record.predicted_price_usd < 150000 %}
+            <div class="col-12">
+              <div class="context-message context-low">
+                <i class="bi bi-arrow-down-circle-fill me-2"></i>
+                This property is priced below the California median — potentially a great value opportunity.
+              </div>
+            </div>
+            {% elif record.predicted_price_usd < 350000 %}
+            <div class="col-12">
+              <div class="context-message context-mid">
+                <i class="bi bi-dash-circle-fill me-2"></i>
+                This property falls in the moderate price range for California.
+              </div>
+            </div>
+            {% else %}
+            <div class="col-12">
+              <div class="context-message context-high">
+                <i class="bi bi-arrow-up-circle-fill me-2"></i>
+                This property is in the premium segment of California housing market.
+              </div>
+            </div>
+            {% endif %}
+          </div>
+
+          <!-- Price Gauge -->
+          <div class="price-gauge mt-3">
+            <div class="gauge-labels">
+              <span>$50k</span><span>$200k</span><span>$350k</span><span>$500k+</span>
+            </div>
+            <div class="gauge-bar">
+              {% with pct=record.predicted_price_usd|default:0 %}
+              <div class="gauge-fill"
+                   style="width: {% widthratio record.predicted_price_usd 500000 100 %}%;
+                          max-width: 100%;">
+              </div>
+              {% endwith %}
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="d-flex gap-3 mt-4">
+          <a href="{% url 'predict' %}" class="btn btn-predict flex-grow-1">
+            <i class="bi bi-arrow-repeat me-2"></i>New Prediction
+          </a>
+          <a href="{% url 'history' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-clock-history me-1"></i>History
+          </a>
+          <a href="{% url 'dashboard' %}" class="btn btn-outline-info">
+            <i class="bi bi-bar-chart-line me-1"></i>Dashboard
+          </a>
+        </div>
+      </div>
+
+      <!-- Input Summary -->
+      <div class="col-lg-5 mt-4 mt-lg-0">
+        <div class="input-summary-card">
+          <h6 class="fw-600 mb-3">
+            <i class="bi bi-list-check me-2 text-info"></i>Input Features Used
+          </h6>
+          <table class="table table-sm input-table">
+            <tbody>
+              {% for label, value in input_data %}
+              <tr>
+                <td class="text-muted">{{ label }}</td>
+                <td class="fw-500 text-end">{{ value }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Metadata -->
+        <div class="meta-card mt-3">
+          <h6 class="fw-600 mb-3">
+            <i class="bi bi-info-circle me-2 text-secondary"></i>Prediction Metadata
+          </h6>
+          <div class="meta-row">
+            <span class="meta-label">Prediction ID</span>
+            <code>#{{ record.pk }}</code>
+          </div>
+          <div class="meta-row">
+            <span class="meta-label">Timestamp</span>
+            <span>{{ record.created_at|date:"Y-m-d H:i:s" }}</span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-label">Model Used</span>
+            <span class="text-primary">{{ record.model_used }}</span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-label">Confidence</span>
+            <span class="badge bg-{{ badge_class }}">{{ record.confidence_level }}</span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-label">Raw Value (×100k)</span>
+            <code>{{ record.predicted_price }}</code>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+{% endblock %}

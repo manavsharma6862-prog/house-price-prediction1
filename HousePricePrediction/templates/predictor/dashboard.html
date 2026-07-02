@@ -1,0 +1,223 @@
+{% extends 'predictor/base.html' %}
+{% block title %}Dashboard — HouseAI{% endblock %}
+
+{% block content %}
+<section class="page-hero py-5">
+  <div class="container">
+    <div class="page-hero-inner text-center">
+      <div class="page-icon mb-3"><i class="bi bi-bar-chart-line-fill"></i></div>
+      <h1 class="page-title">Analytics Dashboard</h1>
+      <p class="page-subtitle">Real-time insights from all predictions made</p>
+    </div>
+  </div>
+</section>
+
+<section class="py-5">
+  <div class="container">
+
+    <!-- KPI Cards -->
+    <div class="row g-4 mb-5">
+      <div class="col-md-6 col-lg-3">
+        <div class="kpi-card kpi-blue">
+          <div class="kpi-icon"><i class="bi bi-lightning-fill"></i></div>
+          <div class="kpi-value">{{ total }}</div>
+          <div class="kpi-label">Total Predictions</div>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-3">
+        <div class="kpi-card kpi-green">
+          <div class="kpi-icon"><i class="bi bi-cash-stack"></i></div>
+          <div class="kpi-value">${{ avg_usd|floatformat:0 }}</div>
+          <div class="kpi-label">Average Predicted Price</div>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-3">
+        <div class="kpi-card kpi-teal">
+          <div class="kpi-icon"><i class="bi bi-shield-check"></i></div>
+          <div class="kpi-value">{{ high_conf }}</div>
+          <div class="kpi-label">High Confidence</div>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-3">
+        <div class="kpi-card kpi-purple">
+          <div class="kpi-icon"><i class="bi bi-cpu"></i></div>
+          <div class="kpi-value">{{ best_model|truncatechars:14 }}</div>
+          <div class="kpi-label">Best ML Model</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="row g-4 mb-5">
+      <div class="col-lg-6">
+        <div class="chart-card">
+          <h6 class="chart-title mb-3"><i class="bi bi-bar-chart me-2"></i>Price Distribution</h6>
+          <canvas id="priceDistChart" height="250"></canvas>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="chart-card">
+          <h6 class="chart-title mb-3"><i class="bi bi-pie-chart me-2"></i>Confidence Levels</h6>
+          <canvas id="confChart" height="250"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Model Performance Table -->
+    <div class="row g-4 mb-5">
+      <div class="col-12">
+        <div class="chart-card">
+          <h6 class="chart-title mb-3"><i class="bi bi-trophy me-2"></i>Model Performance Comparison</h6>
+          <div class="table-responsive">
+            <table class="table table-dark table-hover align-middle mb-0">
+              <thead>
+                <tr>
+                  <th>Model</th><th>R² Score</th><th>RMSE</th><th>MAE</th>
+                  <th>R² Bar</th><th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for m in model_results %}
+                <tr class="{% if m.best %}table-success-subtle{% endif %}">
+                  <td class="fw-600">{{ m.name }}</td>
+                  <td class="text-success">{{ m.r2 }}</td>
+                  <td class="text-warning">{{ m.rmse }}</td>
+                  <td class="text-info">{{ m.mae }}</td>
+                  <td style="min-width:120px;">
+                    <div class="progress" style="height:8px;background:#1e293b;">
+                      <div class="progress-bar {% if m.best %}bg-success{% else %}bg-primary{% endif %}"
+                           style="width:{% widthratio m.r2 1 100 %}%"></div>
+                    </div>
+                  </td>
+                  <td>
+                    {% if m.best %}
+                    <span class="badge bg-success"><i class="bi bi-trophy-fill me-1"></i>Best</span>
+                    {% else %}
+                    <span class="badge bg-secondary">Evaluated</span>
+                    {% endif %}
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ML Visualizations -->
+    <div class="row g-4 mb-5">
+      <div class="col-12">
+        <h5 class="section-title mb-4"><i class="bi bi-graph-up me-2"></i>ML Training Visualizations</h5>
+      </div>
+      <div class="col-md-6">
+        <div class="viz-card">
+          <div class="viz-title">Correlation Heatmap</div>
+          <img src="/media/visualizations/correlation_heatmap.png" alt="Correlation Heatmap" class="viz-img" loading="lazy"/>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="viz-card">
+          <div class="viz-title">Feature Importance</div>
+          <img src="/media/visualizations/feature_importance.png" alt="Feature Importance" class="viz-img" loading="lazy"/>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="viz-card">
+          <div class="viz-title">Price Distribution</div>
+          <img src="/media/visualizations/price_distribution.png" alt="Price Distribution" class="viz-img" loading="lazy"/>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="viz-card">
+          <div class="viz-title">Scatter Plots</div>
+          <img src="/media/visualizations/scatter_plots.png" alt="Scatter Plots" class="viz-img" loading="lazy"/>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Predictions -->
+    <div class="row">
+      <div class="col-12">
+        <div class="chart-card">
+          <h6 class="chart-title mb-3"><i class="bi bi-clock-history me-2"></i>Recent Predictions</h6>
+          {% if recent10 %}
+          <div class="table-responsive">
+            <table class="table table-dark table-hover align-middle mb-0">
+              <thead>
+                <tr>
+                  <th>#</th><th>Predicted Price</th><th>Income</th>
+                  <th>Rooms</th><th>Confidence</th><th>Timestamp</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for r in recent10 %}
+                <tr>
+                  <td><code>#{{ r.pk }}</code></td>
+                  <td class="fw-600 text-success">${{ r.predicted_price_usd|floatformat:0 }}</td>
+                  <td>${{ r.median_income|floatformat:1 }}0k</td>
+                  <td>{{ r.avg_rooms|floatformat:1 }}</td>
+                  <td><span class="badge bg-{{ r.confidence_badge_class }}">{{ r.confidence_level }}</span></td>
+                  <td class="text-muted small">{{ r.created_at|date:"M j, H:i" }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% else %}
+          <div class="empty-state py-5 text-center">
+            <i class="bi bi-inbox fs-1 text-muted d-block mb-3"></i>
+            <p class="text-muted">No predictions yet. <a href="{% url 'predict' %}">Make your first prediction!</a></p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const CHART_DEFAULTS = {
+  responsive: true,
+  plugins: { legend: { labels: { color: '#94a3b8' } } },
+};
+
+const priceCtx = document.getElementById('priceDistChart').getContext('2d');
+new Chart(priceCtx, {
+  type: 'bar',
+  data: {
+    labels: {{ buckets_labels|safe }},
+    datasets: [{
+      label: 'Predictions',
+      data: {{ buckets_values|safe }},
+      backgroundColor: ['#38bdf8','#818cf8','#34d399','#f59e0b','#f43f5e'],
+      borderRadius: 6,
+    }]
+  },
+  options: {
+    ...CHART_DEFAULTS,
+    scales: {
+      x: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } },
+      y: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } },
+    }
+  }
+});
+
+const confCtx = document.getElementById('confChart').getContext('2d');
+new Chart(confCtx, {
+  type: 'doughnut',
+  data: {
+    labels: ['High Confidence', 'Medium Confidence', 'Low Confidence'],
+    datasets: [{
+      data: [{{ high_conf }}, {{ med_conf }}, {{ low_conf }}],
+      backgroundColor: ['#34d399','#f59e0b','#f43f5e'],
+      borderWidth: 2, borderColor: '#0f172a',
+    }]
+  },
+  options: { ...CHART_DEFAULTS, cutout: '65%' }
+});
+</script>
+{% endblock %}
